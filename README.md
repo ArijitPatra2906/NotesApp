@@ -1,4 +1,4 @@
-# Full Stack Project: Client and Server
+# Full Stack Project: Note taking app
 
 This project contains two main components:
 1. **Client**: A React-based frontend application.
