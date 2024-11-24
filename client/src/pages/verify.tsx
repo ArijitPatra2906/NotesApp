@@ -119,7 +119,7 @@ const Verify: React.FC = () => {
         </div>
       </div>
 
-      <div className="hidden lg:flex flex-1">
+      <div className="hidden lg:block lg:w-1/2 h-fit bg-cover bg-no-repeat">
         <img
           src={background}
           alt="Background"

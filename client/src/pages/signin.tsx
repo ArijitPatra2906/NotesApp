@@ -210,10 +210,13 @@ const SignIn: React.FC = () => {
         </div>
       </div>
 
-      <div
-        className="lg:w-1/2 h-screen bg-cover bg-no-repeat"
-        style={{ backgroundImage: `url(${background})` }}
-      ></div>
+      <div className="hidden lg:block lg:w-1/2 h-fit bg-cover bg-no-repeat">
+        <img
+          src={background}
+          alt="Background"
+          className="object-cover w-full h-full rounded-l-lg"
+        />
+      </div>
     </div>
   );
 };
