@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import userRoutes from "./routes/userRoutes";
+import noteRoutes from "./routes/noteRoutes";
 
 // Load environment variables from a `.env` file
 dotenv.config();
@@ -36,7 +37,8 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Routes
-app.use("/api/users", userRoutes);
+app.use("/api/auth", userRoutes);
+app.use("/api/note", noteRoutes);
 
 // Start the server
 app.listen(PORT, () => {

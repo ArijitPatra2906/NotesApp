@@ -18,7 +18,7 @@ export const sendOTPEmail = async (
     from: process.env.EMAIL_USER, // Your email address
     to: email, // Recipient's email address
     subject: "Your OTP for Signup",
-    text: `Your OTP for registration is: ${otp}.`,
+    text: `Your OTP for registration is: ${otp}.OTP will be valid for 24 hours`,
   };
 
   try {
