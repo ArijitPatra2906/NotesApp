@@ -28,8 +28,21 @@ mongoose
     console.error(err);
   });
 
+// CORS Configuration
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://your-render-domain.com",
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true, // Include credentials (cookies, headers)
+  })
+);
+
 // Middleware to parse JSON
-app.use(cors());
 app.use(express.json());
 
 app.get("/", (req: Request, res: Response) => {
