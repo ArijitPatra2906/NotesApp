@@ -6,6 +6,12 @@ import { apiConstants } from "../constant/apiConstant";
 import { toast } from "react-toastify";
 import { logoutUser } from "../store/userSlice";
 import { useNavigate } from "react-router-dom";
+import { Formik, Field, Form, ErrorMessage } from "formik";
+import * as Yup from "yup";
+
+const validationSchema = Yup.object({
+  title: Yup.string().required("Note title is required"),
+});
 
 const Dashboard: React.FC = () => {
   const user = useSelector((state: any) => state.user);
@@ -16,7 +22,10 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState<boolean>(false);
-  const [newNoteTitle, setNewNoteTitle] = useState<string>("");
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null); // Store the note ID to delete
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   const fetchNotes = async () => {
     try {
@@ -39,32 +48,41 @@ const Dashboard: React.FC = () => {
     fetchNotes();
   }, []);
 
-  const createNote = async () => {
+  const createNote = async (values: { title: string }) => {
+    setIsSubmitting(true);
     try {
       const response = await instance.post(`/api/note`, {
-        title: newNoteTitle,
+        title: values.title,
       });
 
       if (response.status === apiConstants.success) {
-        setNewNoteTitle("");
+        setModalOpen(false);
         fetchNotes();
         toast.success(response.data?.message);
-        setModalOpen(false);
       }
     } catch (err) {
       setError("Failed to create note.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const deleteNote = async (noteId: string) => {
+  const deleteNote = async () => {
+    if (!noteToDelete) return;
+    setIsDeleting(true);
+
     try {
-      const response = await instance.delete(`/api/note/${noteId}`);
+      const response = await instance.delete(`/api/note/${noteToDelete}`);
       if (response.status === apiConstants.success) {
         toast.success(response.data?.message);
         fetchNotes();
       }
     } catch (err) {
       setError("Failed to delete note.");
+    } finally {
+      setDeleteModalOpen(false);
+      setNoteToDelete(null);
+      setIsDeleting(false);
     }
   };
 
@@ -109,25 +127,78 @@ const Dashboard: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-800 mb-4">
               Create a New Note
             </h3>
-            <input
-              type="text"
-              className="w-full px-4 py-2 border rounded-lg mb-4"
-              value={newNoteTitle}
-              onChange={(e) => setNewNoteTitle(e.target.value)}
-              placeholder="Enter note title"
-            />
-            <div className="flex justify-between">
+            <Formik
+              initialValues={{ title: "" }}
+              validationSchema={validationSchema}
+              onSubmit={(values, { setSubmitting }) => {
+                createNote(values);
+                setSubmitting(false);
+              }}
+            >
+              <Form>
+                <div>
+                  <Field
+                    type="text"
+                    name="title"
+                    className="w-full px-4 py-2 border rounded-lg mb-4"
+                    placeholder="Enter note title"
+                  />
+                  <ErrorMessage
+                    name="title"
+                    component="div"
+                    className="text-red-500 text-sm"
+                  />
+                </div>
+                <div className="flex justify-between mt-5">
+                  <button
+                    onClick={() => setModalOpen(false)}
+                    type="button"
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+                  >
+                    {isSubmitting ? (
+                      <div className="animate-spin rounded-full h-5 w-5 border-t-4 border-white"></div>
+                    ) : (
+                      "Create"
+                    )}
+                  </button>
+                </div>
+              </Form>
+            </Formik>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg w-96">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">
+              Are you sure you want to delete this note?
+            </h3>
+            <div className="flex justify-between mt-5">
               <button
-                onClick={() => setModalOpen(false)}
+                onClick={() => setDeleteModalOpen(false)}
+                type="button"
                 className="bg-gray-500 text-white px-4 py-2 rounded-lg"
               >
                 Cancel
               </button>
               <button
-                onClick={createNote}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+                onClick={deleteNote}
+                type="button"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg"
               >
-                Create
+                {isDeleting ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-4 border-white"></div>
+                ) : (
+                  "Delete"
+                )}
               </button>
             </div>
           </div>
@@ -158,7 +229,13 @@ const Dashboard: React.FC = () => {
                   className="flex justify-between items-center bg-white shadow-2xl rounded-lg p-4"
                 >
                   <p className="text-gray-800">{note.title}</p>
-                  <button onClick={() => deleteNote(note._id)} className="">
+                  <button
+                    onClick={() => {
+                      setNoteToDelete(note._id);
+                      setDeleteModalOpen(true);
+                    }}
+                    className=""
+                  >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
@@ -170,13 +247,13 @@ const Dashboard: React.FC = () => {
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 00 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m0 0 5.042 1.232"
                       />
                     </svg>
                   </button>
                 </div>
               ))
-            : !loading && <p className="text-gray-500">No notes available.</p>}
+            : "No notes available."}
         </div>
       </div>
     </div>
