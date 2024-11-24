@@ -31,7 +31,7 @@ mongoose
 // CORS Configuration
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://your-render-domain.com",
+  "https://highwaydelite-notesapp.vercel.app",
 ];
 
 app.use(
